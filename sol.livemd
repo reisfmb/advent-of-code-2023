@@ -1,4 +1,4 @@
-<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"}]} -->
+<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/example1.txt"},"name":"example1.txt","type":"file"}]} -->
 
 # AoC 2023
 
@@ -156,4 +156,126 @@ end
 Day2.run(input, constrains)
 ```
 
-<!-- livebook:{"offset":3880,"stamp":{"token":"XCP.3SZ9jFJ9MXoHhMDNLwM0d6MPLV9Ca7PhAL_iycwCKZ0ncBe_sXx2xTFGukJKcnc6-34rKeLlD6PfN4wJqun_oWafJsvQLiXb9tVNKNM","version":2}} -->
+## Day 3
+
+```elixir
+input =
+  Kino.FS.file_path("day_3_input.txt")
+  |> File.read!()
+  |> String.split("\n")
+  |> Enum.filter(&(&1 != ""))
+```
+
+```elixir
+defmodule Day3 do
+  require Logger
+
+  def run(input) do
+    row_range = Enum.to_list(0..(length(input) - 1))
+
+    part_1 =
+      row_range
+      |> Enum.reduce([], &generate_all_checks(input, &1, &2))
+      |> Enum.filter(&filter_with_checks(input, &1))
+      |> Enum.map(&Map.get(&1, :number))
+      |> Enum.sum()
+
+    part_2 =
+      row_range
+      |> Enum.reduce([], &generate_all_checks(input, &1, &2))
+      |> Enum.reduce(%{}, &asterisk_transformation(input, &1, &2))
+      |> Map.values()
+      |> Enum.filter(&(length(&1) === 2))
+      |> Enum.map(&Enum.product/1)
+      |> Enum.sum()
+
+    {part_1, part_2}
+  end
+
+  defp asterisk_transformation(input, check_map, accumulator) do
+    checks = Map.get(check_map, :check)
+    number = Map.get(check_map, :number)
+
+    checks
+    |> Enum.reduce(accumulator, fn {row, col}, acc ->
+      line = Enum.at(input, row)
+      char = String.at(line, col)
+
+      with :error <- Integer.parse(char),
+           true <- char === "*" do
+        key = inspect({row, col})
+        value = Map.get(acc, key, []) ++ [number]
+
+        Map.put(acc, key, value)
+      else
+        _ -> acc
+      end
+    end)
+  end
+
+  defp filter_with_checks(input, check_map) do
+    Map.get(check_map, :check)
+    |> Enum.map(fn {row, col} ->
+      line = Enum.at(input, row)
+      char = String.at(line, col)
+
+      with :error <- Integer.parse(char),
+           true <- char !== "." do
+        true
+      else
+        _ -> false
+      end
+    end)
+    |> Enum.any?(& &1)
+  end
+
+  defp generate_all_checks(input, row_number, accumulator) do
+    numbers_col_start_and_size = get_numbers_placement_per_row(input, row_number)
+
+    line = Enum.at(input, row_number)
+
+    row_checks =
+      Enum.reduce(numbers_col_start_and_size, [], fn tuple, acc ->
+        [col_start, size] = [elem(tuple, 0), elem(tuple, 1)]
+        col_end = col_start + size
+        max_row = length(input) - 1
+        max_col = String.length(line) - 1
+
+        [
+          %{
+            number: String.slice(line, col_start, size) |> String.to_integer(),
+            check: generate_el_checks(row_number, col_start, col_end, max_row, max_col)
+          }
+          | acc
+        ]
+      end)
+
+    row_checks ++ accumulator
+  end
+
+  defp generate_el_checks(row, col_start, col_end, max_row, max_col) do
+    row_above = Enum.max([0, row - 1])
+    row_below = Enum.min([max_row, row + 1])
+
+    col_before = Enum.max([0, col_start - 1])
+    col_after = Enum.min([max_col, col_end])
+
+    range = Enum.to_list(col_before..col_after)
+
+    [row_above, row, row_below]
+    |> Enum.uniq_by(& &1)
+    |> Enum.flat_map(fn row_number -> Enum.map(range, fn index -> {row_number, index} end) end)
+  end
+
+  defp get_numbers_placement_per_row(input, row) do
+    Regex.scan(~r/\d+/, Enum.at(input, row), return: :index)
+    |> Enum.map(&Enum.at(&1, 0))
+  end
+end
+```
+
+```elixir
+Day3.run(input)
+```
+
+<!-- livebook:{"offset":7227,"stamp":{"token":"XCP.r3tgVGtTPNO15O9uXOF_1nr1JSg7H7j_Fxe1jSzQTp26nLf69UKeGKHzntphFIaWxBlp6sW3YMZlqHSksxneWrjxd-n6MRFx5P1pPnw","version":2}} -->
