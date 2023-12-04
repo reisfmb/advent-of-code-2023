@@ -1,4 +1,4 @@
-<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/example1.txt"},"name":"example1.txt","type":"file"}]} -->
+<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"}]} -->
 
 # AoC 2023
 
@@ -278,4 +278,110 @@ end
 Day3.run(input)
 ```
 
-<!-- livebook:{"offset":7227,"stamp":{"token":"XCP.r3tgVGtTPNO15O9uXOF_1nr1JSg7H7j_Fxe1jSzQTp26nLf69UKeGKHzntphFIaWxBlp6sW3YMZlqHSksxneWrjxd-n6MRFx5P1pPnw","version":2}} -->
+## Day 4
+
+```elixir
+input =
+  Kino.FS.file_path("day_4_input.txt")
+  |> File.read!()
+  |> String.split("\n")
+  |> Enum.filter(&(&1 != ""))
+```
+
+```elixir
+require Logger
+
+defmodule Day4 do
+  def run(input) do
+    part_1 =
+      input
+      |> Enum.map(fn card ->
+        [hd, tl] = String.split(card, " | ")
+
+        get_winning_numbers(hd)
+        |> calculate_num_of_matches(get_my_numbers(tl))
+        |> calculate_score()
+      end)
+      |> Enum.sum()
+
+    quantities_per_card = input |> Enum.map(fn _ -> 1 end)
+
+    part_2 =
+      input
+      |> Enum.with_index()
+      |> Enum.reduce(quantities_per_card, fn {card, card_index}, acc ->
+        [hd, tl] = String.split(card, " | ")
+        num_of_matches = calculate_num_of_matches(get_winning_numbers(hd), get_my_numbers(tl))
+
+        case num_of_matches do
+          0 ->
+            acc
+
+          n ->
+            curr_list = acc
+            positions_to_increase = Enum.to_list((card_index + 1)..(card_index + n))
+            amount_to_increase = Enum.at(acc, card_index)
+
+            increase_numerical_list_at_positions(
+              curr_list,
+              positions_to_increase,
+              amount_to_increase
+            )
+        end
+      end)
+      |> Enum.sum()
+
+    {part_1, part_2}
+  end
+
+  defp get_winning_numbers(string) do
+    string
+    |> String.split(": ")
+    |> Enum.at(1)
+    |> String.split(" ")
+    |> Enum.filter(&(&1 != ""))
+    |> Enum.map(&String.to_integer/1)
+  end
+
+  defp get_my_numbers(string) do
+    string
+    |> String.split(" ")
+    |> Enum.filter(&(&1 != ""))
+    |> Enum.map(&String.to_integer/1)
+  end
+
+  defp calculate_num_of_matches(winning_numbers, my_numbers) do
+    Enum.reduce(my_numbers, 0, fn my_num, acc ->
+      case Enum.find(winning_numbers, &(&1 === my_num)) do
+        nil ->
+          acc
+
+        _ ->
+          acc + 1
+      end
+    end)
+  end
+
+  defp calculate_score(num_of_matches) do
+    case num_of_matches do
+      0 -> 0
+      p -> 2 ** (p - 1)
+    end
+  end
+
+  defp increase_numerical_list_at_positions(list, positions, increment) do
+    Enum.with_index(list, fn el, idx ->
+      case Enum.find(positions, &(&1 === idx)) do
+        nil -> el
+        _ -> el + increment
+      end
+    end)
+  end
+end
+```
+
+```elixir
+Day4.run(input)
+```
+
+<!-- livebook:{"offset":9487,"stamp":{"token":"XCP.UDw_VcQgAgaDL8tesqW7xvoK4uou2ij8Re3zbkCsvHHjpPI-dta-RR48Jujd5XLoKrHDcohR97qo67MtaePOOoijW0FLAyMX-I7mO_g","version":2}} -->
