@@ -1,4 +1,4 @@
-<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"}]} -->
+<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"}]} -->
 
 # AoC 2023
 
@@ -384,4 +384,154 @@ end
 Day4.run(input)
 ```
 
-<!-- livebook:{"offset":9487,"stamp":{"token":"XCP.UDw_VcQgAgaDL8tesqW7xvoK4uou2ij8Re3zbkCsvHHjpPI-dta-RR48Jujd5XLoKrHDcohR97qo67MtaePOOoijW0FLAyMX-I7mO_g","version":2}} -->
+## Day 5
+
+```elixir
+input =
+  Kino.FS.file_path("day_5_input.txt")
+  |> File.read!()
+  |> String.split("\n")
+```
+
+```elixir
+defmodule Day5 do
+  def run(input) do
+    triples = get_triples(input)
+    part_1 = exec(get_tuples_for_part_1(input), triples)
+    part_2 = exec(get_tuples(input), triples)
+
+    {part_1, part_2}
+  end
+
+  defp exec(tuples, triples) do
+    triples
+    |> Enum.reduce(tuples, fn triple, acc ->
+      acc
+      |> chop_tuples_from_triples(triple)
+      |> apply_triples_in_tuples(triple)
+    end)
+    |> Enum.sort(fn {minA, _}, {minB, _} -> minA <= minB end)
+    |> Enum.at(0)
+    |> elem(0)
+  end
+
+  defp get_tuples_for_part_1(input) do
+    input
+    |> Enum.at(0)
+    |> String.split(": ")
+    |> Enum.at(1)
+    |> String.split(" ")
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.map(fn el -> {el, el} end)
+  end
+
+  defp get_tuples(input) do
+    input
+    |> Enum.at(0)
+    |> String.split(": ")
+    |> Enum.at(1)
+    |> String.split(" ")
+    |> Enum.map(&String.to_integer/1)
+    |> Enum.chunk_every(2)
+    |> Enum.map(fn chunk -> {Enum.at(chunk, 0), Enum.at(chunk, 0) + Enum.at(chunk, 1) - 1} end)
+  end
+
+  defp get_triples(input) do
+    [_ | maps] =
+      input
+      |> Enum.chunk_by(&(&1 === ""))
+      |> Enum.filter(fn arr -> Enum.all?(arr, fn el -> el !== "" end) end)
+
+    maps
+    |> Enum.map(fn [_ | tl] ->
+      Enum.map(tl, fn el ->
+        el
+        |> String.split(" ")
+        |> Enum.map(&String.to_integer/1)
+      end)
+      |> Enum.map(fn [target, source, length] ->
+        {source, source + length - 1, target - source}
+      end)
+    end)
+  end
+
+  defp chop_tuple_from_triple(tuple, triple) do
+    {triple_min, triple_max, _} = triple
+    {tuple_min, tuple_max} = tuple
+
+    cond do
+      tuple_max < triple_min or tuple_min > triple_max ->
+        [tuple]
+
+      triple_min <= tuple_min and tuple_max <= triple_max ->
+        [tuple]
+
+      tuple_min < triple_min and tuple_max <= triple_max ->
+        [
+          {tuple_min, triple_min - 1},
+          {triple_min, tuple_max}
+        ]
+
+      triple_min <= tuple_min and triple_max < tuple_max ->
+        [
+          {tuple_min, triple_max},
+          {triple_max + 1, tuple_max}
+        ]
+
+      tuple_min < triple_min and triple_max < tuple_max ->
+        [
+          {tuple_min, triple_min - 1},
+          {triple_min, triple_max},
+          {triple_max + 1, tuple_max}
+        ]
+    end
+  end
+
+  defp chop_tuples_from_triple(tuples, triple) do
+    Enum.flat_map(tuples, &chop_tuple_from_triple(&1, triple))
+  end
+
+  defp chop_tuple_from_triples(tuple, triples) do
+    Enum.reduce(triples, [tuple], &chop_tuples_from_triple(&2, &1))
+  end
+
+  defp chop_tuples_from_triples(tuples, triples) do
+    Enum.flat_map(tuples, &chop_tuple_from_triples(&1, triples))
+  end
+
+  defp apply_triple_in_tuple(tuple, triple) do
+    {triple_min, triple_max, increment} = triple
+    {tuple_min, tuple_max} = tuple
+
+    cond do
+      triple_min <= tuple_min and tuple_max <= triple_max ->
+        new_tuple_min = tuple_min + increment
+        new_tuple_max = tuple_max + increment
+        {Enum.min([new_tuple_min, new_tuple_max]), Enum.max([new_tuple_min, new_tuple_max])}
+
+      true ->
+        tuple
+    end
+  end
+
+  defp apply_triples_in_tuple(tuple, triples) do
+    new_tuples = Enum.map(triples, &apply_triple_in_tuple(tuple, &1))
+    contain_new? = Enum.any?(new_tuples, fn t -> t !== tuple end)
+
+    case contain_new? do
+      true -> Enum.filter(new_tuples, fn t -> t !== tuple end)
+      false -> new_tuples |> Enum.uniq()
+    end
+  end
+
+  defp apply_triples_in_tuples(tuples, triples) do
+    Enum.flat_map(tuples, &apply_triples_in_tuple(&1, triples))
+  end
+end
+```
+
+```elixir
+Day5.run(input)
+```
+
+<!-- livebook:{"offset":13343,"stamp":{"token":"XCP.5Deid81sbPmKwVP4UEMt7VtlJRYqIRK9Hi0kh3Gz66ph0FxPmUl4xa79UldWaMycmvXXHGwsdIyo218nNpn3W56rblB-tkfiunY6Wgk","version":2}} -->
