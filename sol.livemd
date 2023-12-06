@@ -1,4 +1,4 @@
-<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"}]} -->
+<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/input.txt"},"name":"day_6_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/example1.txt"},"name":"example1.txt","type":"file"}]} -->
 
 # AoC 2023
 
@@ -534,4 +534,75 @@ end
 Day5.run(input)
 ```
 
-<!-- livebook:{"offset":13343,"stamp":{"token":"XCP.5Deid81sbPmKwVP4UEMt7VtlJRYqIRK9Hi0kh3Gz66ph0FxPmUl4xa79UldWaMycmvXXHGwsdIyo218nNpn3W56rblB-tkfiunY6Wgk","version":2}} -->
+## Day 6
+
+```elixir
+input =
+  Kino.FS.file_path("day_6_input.txt")
+  |> File.read!()
+  |> String.split("\n")
+```
+
+```elixir
+defmodule Day6 do
+  def run(input) do
+    part_1 = get_list_of_tuples_part_1(input) |> exec()
+    part_2 = get_list_of_tuples_part_2(input) |> exec()
+
+    {part_1, part_2}
+  end
+
+  defp exec(list_of_tuples) do
+    list_of_tuples
+    |> Enum.map(fn {max_time, distance_record} ->
+      Enum.to_list(0..max_time)
+      |> Enum.map(&calculate_distance(&1, max_time))
+      |> Enum.count(&(&1 > distance_record))
+    end)
+    |> Enum.product()
+  end
+
+  defp get_list_of_tuples_part_1(input) do
+    [times, distances] =
+      input
+      |> Enum.map(fn str ->
+        str
+        |> String.replace(~r/\s\s+/, " ")
+        |> String.split(": ")
+        |> Enum.at(1)
+        |> String.split(" ")
+        |> Enum.map(&String.to_integer/1)
+      end)
+
+    Enum.zip(times, distances)
+  end
+
+  defp get_list_of_tuples_part_2(input) do
+    [times, distances] =
+      input
+      |> Enum.map(fn str ->
+        str
+        |> String.replace(~r/\s\s+/, " ")
+        |> String.split(": ")
+        |> Enum.at(1)
+        |> String.replace(" ", "")
+        |> String.to_integer()
+      end)
+
+    [{times, distances}]
+  end
+
+  defp calculate_distance(time_holding_button, max_time) do
+    cond do
+      time_holding_button === 0 -> 0
+      true -> (max_time - time_holding_button) * time_holding_button
+    end
+  end
+end
+```
+
+```elixir
+Day6.run(input)
+```
+
+<!-- livebook:{"offset":15127,"stamp":{"token":"XCP.ke_fUJIx6vAMyOvDPhGOEfRnExlYJAd1kVdcTXAmiLVrcB1WVJKtrEdb-ad5PaLePHXb25F5LCC2mUjnil539siKn8dZCBgBe9lzwpA","version":2}} -->
