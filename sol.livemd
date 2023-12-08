@@ -1,4 +1,4 @@
-<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/input.txt"},"name":"day_6_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/example1.txt"},"name":"example1.txt","type":"file"}]} -->
+<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/input.txt"},"name":"day_6_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 7/input.txt"},"name":"day_7_input.txt","type":"file"}]} -->
 
 # AoC 2023
 
@@ -605,4 +605,252 @@ end
 Day6.run(input)
 ```
 
-<!-- livebook:{"offset":15127,"stamp":{"token":"XCP.ke_fUJIx6vAMyOvDPhGOEfRnExlYJAd1kVdcTXAmiLVrcB1WVJKtrEdb-ad5PaLePHXb25F5LCC2mUjnil539siKn8dZCBgBe9lzwpA","version":2}} -->
+## Day 7
+
+```elixir
+input =
+  Kino.FS.file_path("day_7_input.txt")
+  |> File.read!()
+  |> String.split("\n")
+```
+
+```elixir
+defmodule Cartesian do
+  def product(characters, n) when is_integer(n) and n > 0 do
+    Enum.chunk_every(List.flatten(generate_cartesian([], characters, n)), n)
+  end
+
+  defp generate_cartesian(acc, _characters, 0), do: [acc]
+
+  defp generate_cartesian(acc, characters, n) do
+    Enum.reduce(characters, [], fn char, result ->
+      generate_cartesian([char | acc], characters, n - 1) ++ result
+    end)
+  end
+end
+
+defmodule CharReplacer do
+  def exec(string, character, list_of_chars) do
+    Enum.reduce(list_of_chars, string, fn letter, acc ->
+      String.replace(acc, ~r/#{character}/, letter, global: false)
+    end)
+  end
+end
+
+defmodule Day7 do
+  require Logger
+
+  alias Cartesian
+
+  @alphabet_1 %{
+    "A" => 12,
+    "K" => 11,
+    "Q" => 10,
+    "J" => 9,
+    "T" => 8,
+    "9" => 7,
+    "8" => 6,
+    "7" => 5,
+    "6" => 4,
+    "5" => 3,
+    "4" => 2,
+    "3" => 1,
+    "2" => 0
+  }
+
+  @alphabet_2 %{
+    "A" => 12,
+    "K" => 11,
+    "Q" => 10,
+    "T" => 9,
+    "9" => 8,
+    "8" => 7,
+    "7" => 6,
+    "6" => 5,
+    "5" => 4,
+    "4" => 3,
+    "3" => 2,
+    "2" => 1,
+    "J" => 0
+  }
+
+  @pc1 Cartesian.product(Map.keys(@alphabet_2) |> Enum.filter(&(&1 !== "J")), 1)
+
+  @pc2 Cartesian.product(Map.keys(@alphabet_2) |> Enum.filter(&(&1 !== "J")), 2)
+
+  @pc3 Cartesian.product(Map.keys(@alphabet_2) |> Enum.filter(&(&1 !== "J")), 3)
+
+  @group_order %{
+    "5" => 6,
+    "41" => 5,
+    "32" => 4,
+    "311" => 3,
+    "221" => 2,
+    "2111" => 1,
+    "11111" => 0
+  }
+
+  def run(input) do
+    card_bid_list_map = get_card_bid_list_map(input)
+
+    part_1 = exec(card_bid_list_map, &group_cards_1/1, @alphabet_1)
+    part_2 = exec(card_bid_list_map, &group_cards_2/1, @alphabet_2)
+
+    {part_1, part_2}
+  end
+
+  defp exec(card_bid_list_map, group_cards_fn, alphabet) do
+    card_bid_list_map
+    |> get_cards_from_card_bid_map_list()
+    |> group_cards_fn.()
+    |> sort_cards_on_each_group(alphabet)
+    |> sort_groups()
+    |> calculate(card_bid_list_map)
+  end
+
+  defp get_card_bid_list_map(input) do
+    input
+    |> Enum.map(fn s ->
+      [card, bid] = String.split(s, " ")
+      %{card => bid}
+    end)
+  end
+
+  defp get_cards_from_card_bid_map_list(card_bid_list_map) do
+    Enum.flat_map(card_bid_list_map, &Map.keys/1)
+  end
+
+  defp get_card_group(card) do
+    card
+    |> String.split("")
+    |> Enum.filter(&(&1 !== ""))
+    |> Enum.reduce(%{}, fn char, acc ->
+      case Map.get(acc, char, nil) do
+        nil -> Map.put(acc, char, 1)
+        _ -> Map.put(acc, char, Map.get(acc, char) + 1)
+      end
+    end)
+    |> Map.values()
+    |> Enum.sort(fn a, b -> b < a end)
+    |> Enum.map(&Integer.to_string/1)
+    |> Enum.join()
+  end
+
+  defp group_cards_1(cards) do
+    Enum.reduce(cards, %{}, fn card, acc ->
+      group = get_card_group(card)
+
+      case Map.get(acc, group, nil) do
+        nil -> Map.put(acc, group, [card])
+        _ -> Map.put(acc, group, [card | Map.get(acc, group)])
+      end
+    end)
+  end
+
+  defp get_card_group_2(card) do
+    num_of_js =
+      card
+      |> String.split("")
+      |> Enum.filter(&(&1 !== ""))
+      |> Enum.count(fn s -> s === "J" end)
+
+    case num_of_js do
+      0 ->
+        get_card_group(card)
+
+      5 ->
+        "5"
+
+      4 ->
+        "5"
+
+      n ->
+        [0, @pc1, @pc2, @pc3]
+        |> Enum.at(n)
+        |> Enum.map(fn letters ->
+          get_card_group(CharReplacer.exec(card, "J", letters))
+        end)
+        |> Enum.sort(fn g_a, g_b ->
+          Map.get(@group_order, g_a, 0) > Map.get(@group_order, g_b, 0)
+        end)
+        |> Enum.at(0)
+    end
+  end
+
+  defp group_cards_2(cards) do
+    Enum.reduce(cards, %{}, fn card, acc ->
+      group = get_card_group_2(card)
+
+      case Map.get(acc, group, nil) do
+        nil -> Map.put(acc, group, [card])
+        _ -> Map.put(acc, group, [card | Map.get(acc, group)])
+      end
+    end)
+  end
+
+  defp get_card_sorting_boolean(card_a, card_b, alphabet) do
+    Enum.reduce_while(0..4, true, fn index, _ ->
+      char_a = String.at(card_a, index)
+      char_b = String.at(card_b, index)
+
+      char_a_value = Map.get(alphabet, char_a, 0)
+      char_b_value = Map.get(alphabet, char_b, 0)
+
+      # Logger.info("Comparing: #{card_a}, #{char_a}, #{char_a_value} with #{card_b} #{char_b} #{char_b_value}")
+
+      cond do
+        char_a_value > char_b_value -> {:halt, false}
+        char_a_value < char_b_value -> {:halt, true}
+        true -> {:cont, true}
+      end
+    end)
+  end
+
+  defp get_group_sorting_boolean(group_a_label, group_b_label) do
+    group_a_value = Map.get(@group_order, group_a_label, 0)
+    group_b_value = Map.get(@group_order, group_b_label, 0)
+
+    group_a_value < group_b_value
+  end
+
+  defp sort_cards_by_group(card_group, alphabet) do
+    Enum.sort(card_group, &get_card_sorting_boolean(&1, &2, alphabet))
+  end
+
+  defp sort_cards_on_each_group(groups, alphabet) do
+    Enum.map(groups, fn {label, group} -> %{label => sort_cards_by_group(group, alphabet)} end)
+  end
+
+  defp sort_groups(card_bid_map_sorted_by_cards) do
+    Enum.sort(card_bid_map_sorted_by_cards, fn g_a, g_b ->
+      group_a_label = Map.keys(g_a) |> Enum.at(0)
+      group_b_label = Map.keys(g_b) |> Enum.at(0)
+      get_group_sorting_boolean(group_a_label, group_b_label)
+    end)
+  end
+
+  defp calculate(full_sorted, card_bid_list_map) do
+    card_bid_map =
+      Enum.reduce(card_bid_list_map, %{}, fn m, acc ->
+        key = Map.keys(m) |> Enum.at(0)
+        Map.put(acc, key, Map.get(m, key))
+      end)
+
+    full_sorted
+    |> Enum.flat_map(fn m -> Map.values(m) end)
+    |> Enum.flat_map(fn m -> m end)
+    |> Enum.with_index()
+    |> Enum.reduce(0, fn {card, index}, acc ->
+      rank = index + 1
+      bid = Map.get(card_bid_map, card, 0)
+      acc + rank * String.to_integer(bid)
+    end)
+  end
+end
+```
+
+```elixir
+Day7.run(input)
+```
+
+<!-- livebook:{"offset":21020,"stamp":{"token":"XCP.WjTpPUykYrncDlksO10otabi15L8wg0fR5_1BS0Sfi09adADRHGhRU2St6RX_5ABPVI44CtCNTOtPZdzqKeXGHDAZw_r6L66jgeyHq4","version":2}} -->
