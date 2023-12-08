@@ -1,4 +1,4 @@
-<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/input.txt"},"name":"day_6_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 7/input.txt"},"name":"day_7_input.txt","type":"file"}]} -->
+<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/input.txt"},"name":"day_6_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 7/input.txt"},"name":"day_7_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 8/input.txt"},"name":"day_8_input.txt","type":"file"}]} -->
 
 # AoC 2023
 
@@ -853,4 +853,113 @@ end
 Day7.run(input)
 ```
 
-<!-- livebook:{"offset":21020,"stamp":{"token":"XCP.WjTpPUykYrncDlksO10otabi15L8wg0fR5_1BS0Sfi09adADRHGhRU2St6RX_5ABPVI44CtCNTOtPZdzqKeXGHDAZw_r6L66jgeyHq4","version":2}} -->
+## Day 8
+
+```elixir
+input =
+  Kino.FS.file_path("day_8_input.txt")
+  |> File.read!()
+  |> String.split("\n")
+  |> Enum.filter(&(&1 !== ""))
+```
+
+```elixir
+defmodule BasicMath do
+  def gcd(a, 0), do: a
+  def gcd(0, b), do: b
+  def gcd(a, b), do: gcd(b, rem(a, b))
+
+  def lcm(0, 0), do: 0
+  def lcm(a, b), do: trunc(a * b / gcd(a, b))
+end
+
+defmodule Day8 do
+  require Logger
+
+  alias BasicMath
+
+  def run(input) do
+    instructions = get_instructions(input)
+    map = get_map(input)
+
+    part_1 = navigate("AAA", "ZZZ", map, instructions)
+    part_2 = get_origins(Map.keys(map)) |> get_cycle_size(map, instructions) |> lcm
+
+    {part_1, part_2}
+  end
+
+  defp get_instructions(input) do
+    [instructions | _] = input
+    instructions
+  end
+
+  defp get_map(input) do
+    [_ | raw_map] = input
+
+    Enum.reduce(raw_map, %{}, fn entry, acc ->
+      [key, lr] = String.split(entry, " = ")
+      l = String.split(lr, ", ") |> Enum.at(0) |> String.replace("(", "")
+      r = String.split(lr, ", ") |> Enum.at(1) |> String.replace(")", "")
+
+      case Map.get(acc, key, nil) do
+        nil -> Map.put(acc, key, {l, r})
+        _ -> acc
+      end
+    end)
+  end
+
+  defp get_origins(origins) do
+    Enum.filter(origins, &(String.at(&1, 2) === "A"))
+  end
+
+  defp navigate(origin, destiny, map, instructions, steps \\ 0) do
+    instructions_list = String.split(instructions, "") |> Enum.filter(&(&1 !== ""))
+
+    {updated_origin, updated_steps} =
+      Enum.reduce(instructions_list, {origin, steps}, fn dir, acc ->
+        idx = if dir === "L", do: 0, else: 1
+        new_location = Map.get(map, elem(acc, 0)) |> elem(idx)
+
+        {new_location, elem(acc, 1) + 1}
+      end)
+
+    case updated_origin do
+      ^destiny -> updated_steps
+      _ -> navigate(updated_origin, destiny, map, instructions, updated_steps)
+    end
+  end
+
+  defp navigate_2(origin, map, instructions, steps \\ 0) do
+    instructions_list = String.split(instructions, "") |> Enum.filter(&(&1 !== ""))
+
+    {updated_origin, updated_steps} =
+      Enum.reduce(instructions_list, {origin, steps}, fn dir, acc ->
+        idx = if dir === "L", do: 0, else: 1
+        new_location = Map.get(map, elem(acc, 0)) |> elem(idx)
+
+        {new_location, elem(acc, 1) + 1}
+      end)
+
+    if String.at(updated_origin, 2) === "Z",
+      do: updated_steps,
+      else: navigate_2(updated_origin, map, instructions, updated_steps)
+  end
+
+  defp get_cycle_size(origins, map, instructions) do
+    Enum.map(origins, fn origin -> navigate_2(origin, map, instructions) end)
+  end
+
+  defp lcm(list_of_numbers) do
+    sorted_list_of_numbers = list_of_numbers |> Enum.sort(:asc)
+
+    sorted_list_of_numbers
+    |> Enum.reduce(Enum.at(sorted_list_of_numbers, 0), &BasicMath.lcm(&1, &2))
+  end
+end
+```
+
+```elixir
+Day8.run(input)
+```
+
+<!-- livebook:{"offset":23950,"stamp":{"token":"XCP.eaf5Cx1dQReEokWAh4WzjrkeW92j4SmGbPbj40E-QyH4q9k1r1H31M90A9UCoMbYV8IPWF7fAHjAyjkzuXmAfdavSVlAwmddQ0017f0","version":2}} -->
