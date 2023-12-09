@@ -1,4 +1,4 @@
-<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/input.txt"},"name":"day_6_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 7/input.txt"},"name":"day_7_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 8/input.txt"},"name":"day_8_input.txt","type":"file"}]} -->
+<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/input.txt"},"name":"day_6_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 7/input.txt"},"name":"day_7_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 8/input.txt"},"name":"day_8_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 9/input.txt"},"name":"day_9_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 9/example1.txt"},"name":"example1.txt","type":"file"}]} -->
 
 # AoC 2023
 
@@ -962,4 +962,68 @@ end
 Day8.run(input)
 ```
 
-<!-- livebook:{"offset":23950,"stamp":{"token":"XCP.eaf5Cx1dQReEokWAh4WzjrkeW92j4SmGbPbj40E-QyH4q9k1r1H31M90A9UCoMbYV8IPWF7fAHjAyjkzuXmAfdavSVlAwmddQ0017f0","version":2}} -->
+## Day 9
+
+```elixir
+input =
+  Kino.FS.file_path("day_9_input.txt")
+  |> File.read!()
+  |> String.split("\n")
+  |> Enum.filter(&(&1 !== ""))
+```
+
+```elixir
+defmodule Day9 do
+  def run(input) do
+    part_1 =
+      input
+      |> Enum.map(&convert_to_list_of_numbers/1)
+      |> Enum.map(&convert_to_pyramid(&1, [&1]))
+      |> Enum.map(&sum_pyramid_last_digits(&1))
+      |> Enum.sum()
+
+    part_2 =
+      input
+      |> Enum.map(&convert_to_list_of_numbers/1)
+      |> Enum.map(&convert_to_pyramid(&1, [&1]))
+      |> Enum.map(&smart_sum_pyramid_first_digits(&1))
+      |> Enum.sum()
+
+    {part_1, part_2}
+  end
+
+  defp convert_to_list_of_numbers(string) do
+    String.split(string, " ") |> Enum.map(&String.to_integer/1)
+  end
+
+  defp convert_to_pyramid(list_of_numbers, acc \\ []) do
+    list_of_differences =
+      Enum.map(0..(length(list_of_numbers) - 2), fn idx ->
+        Enum.at(list_of_numbers, idx + 1) - Enum.at(list_of_numbers, idx)
+      end)
+
+    case Enum.all?(list_of_differences, &(&1 === 0)) do
+      true -> acc
+      false -> convert_to_pyramid(list_of_differences, [list_of_differences] ++ acc)
+    end
+  end
+
+  defp sum_pyramid_last_digits(pyramid) do
+    pyramid
+    |> Enum.map(&List.last/1)
+    |> Enum.sum()
+  end
+
+  defp smart_sum_pyramid_first_digits(pyramid) do
+    Enum.reduce(pyramid, 0, fn list_of_numbers, acc ->
+      List.first(list_of_numbers) - acc
+    end)
+  end
+end
+```
+
+```elixir
+Day9.run(input)
+```
+
+<!-- livebook:{"offset":25712,"stamp":{"token":"XCP.vdErj1rmsBICqK2DauFZ6QmFOTvvB4H0gucV0dv1A6FlCFESSUZJuHmsrAYezNcu8Cf0wsEZtOZjoDiH6WtErqwdjCnkpHgyQWOL2A0","version":2}} -->
