@@ -1,4 +1,4 @@
-<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 10/input.txt"},"name":"day_10_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/input.txt"},"name":"day_6_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 7/input.txt"},"name":"day_7_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 8/input.txt"},"name":"day_8_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 9/input.txt"},"name":"day_9_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 10/example1.txt"},"name":"example1.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 10/example2.txt"},"name":"example2.txt","type":"file"}]} -->
+<!-- livebook:{"file_entries":[{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 10/input.txt"},"name":"day_10_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 11/input.txt"},"name":"day_11_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 1/input.txt"},"name":"day_1_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 2/input.txt"},"name":"day_2_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 3/input.txt"},"name":"day_3_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 4/input.txt"},"name":"day_4_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 5/input.txt"},"name":"day_5_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 6/input.txt"},"name":"day_6_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 7/input.txt"},"name":"day_7_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 8/input.txt"},"name":"day_8_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 9/input.txt"},"name":"day_9_input.txt","type":"file"},{"file":{"file_system_id":"local","file_system_type":"local","path":"/home/bre/Dev/advent-of-code-2023/day 11/example1.txt"},"name":"example1.txt","type":"file"}]} -->
 
 # AoC 2023
 
@@ -1178,4 +1178,112 @@ end
 Day10.run(input)
 ```
 
-<!-- livebook:{"offset":29804,"stamp":{"token":"XCP.XDijvgL3a17xfgiwyh1OLg1OtvnrlxcEjElzVEIbiWnCKgL3uew8j80Ove3F8E-VHk0NOU3v8_IHuI7qtO83JRg0HQl6fy4qH_1n7vE","version":2}} -->
+## Day 11
+
+```elixir
+input =
+  Kino.FS.file_path("day_11_input.txt")
+  |> File.read!()
+  |> String.split("\n")
+  |> Enum.filter(&(&1 !== ""))
+  |> Enum.map(fn row -> String.split(row, "") |> Enum.filter(&(&1 !== "")) end)
+```
+
+```elixir
+defmodule Day11 do
+  def run(input) do
+    sum_of_all_galaxy_pair_distances =
+      input
+      |> get_expanded_universe()
+      |> get_universe_map()
+      |> remove_empty_spaces()
+      |> calculate_min_distances()
+      |> Map.values()
+      |> Enum.sum()
+
+    part_1 = sum_of_all_galaxy_pair_distances / 2
+  end
+
+  defp get_universe_map(universe) do
+    Enum.with_index(universe)
+    |> Enum.reduce(%{}, fn {row, row_idx}, acc_1 ->
+      Enum.reduce(Enum.with_index(row), acc_1, fn {col, col_idx}, acc_2 ->
+        Map.put(acc_2, {row_idx, col_idx}, col)
+      end)
+    end)
+  end
+
+  defp get_universe_dimensions(universe) do
+    {length(universe) - 1, length(Enum.at(universe, 0)) - 1}
+  end
+
+  defp get_expanded_universe(universe) do
+    universe
+    |> expand_universe_on_rows()
+    |> expand_universe_on_cols()
+  end
+
+  defp expand_universe_on_rows(universe) do
+    {max_rows, _} = get_universe_dimensions(universe)
+
+    row_slices_idx =
+      Enum.reduce(0..max_rows, [], fn row_idx, acc ->
+        row = Enum.at(universe, row_idx)
+        if Enum.all?(row, &(&1 === ".")), do: acc ++ [row_idx], else: acc
+      end) ++ [max_rows]
+
+    {_, expanded_result} =
+      Enum.reduce(row_slices_idx, {0, []}, fn empty_row_idx, {last_row_idx, universe_slice} ->
+        {empty_row_idx, universe_slice ++ Enum.slice(universe, last_row_idx..empty_row_idx)}
+      end)
+
+    expanded_result
+  end
+
+  defp expand_universe_on_cols(universe) do
+    {_, max_cols} = get_universe_dimensions(universe)
+
+    col_slices_idx =
+      Enum.reduce(0..max_cols, [], fn col_idx, acc ->
+        col = Enum.map(universe, &Enum.at(&1, col_idx))
+        if Enum.all?(col, &(&1 === ".")), do: acc ++ [col_idx], else: acc
+      end) ++ [max_cols]
+
+    Enum.map(universe, fn row ->
+      {_, col_expansion} =
+        Enum.reduce(col_slices_idx, {0, []}, fn empty_col_idx, {last_col_idx, universe_slice} ->
+          {empty_col_idx, universe_slice ++ Enum.slice(row, last_col_idx..empty_col_idx)}
+        end)
+
+      col_expansion
+    end)
+  end
+
+  defp remove_empty_spaces(universe_map) do
+    Enum.reduce(universe_map, %{}, fn {key, value}, acc ->
+      if value !== ".", do: Map.put(acc, key, value), else: acc
+    end)
+  end
+
+  defp calculate_min_distances(universe_map) do
+    galaxies_coordinates = Map.keys(universe_map)
+
+    Enum.reduce(universe_map, %{}, fn {key, _}, acc ->
+      min_distance =
+        Enum.map(galaxies_coordinates, fn {g_x, g_y} ->
+          abs(g_x - elem(key, 0)) + abs(g_y - elem(key, 1))
+        end)
+        |> Enum.filter(&(&1 > 0))
+        |> Enum.sum()
+
+      Map.put(acc, key, min_distance)
+    end)
+  end
+end
+```
+
+```elixir
+Day11.run(input)
+```
+
+<!-- livebook:{"offset":32702,"stamp":{"token":"XCP.0xO5ixclrh1zqlsE3dDzul_Tz9Q5muiaXsGcZPs6IW-0TlbLcEGxOf4IT9XQMN9g5culTkiNwRfNCxkoLR0u2HPJrNIQDNLfqzWzgTk","version":2}} -->
